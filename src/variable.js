@@ -17,7 +17,7 @@ class Variable {
     return this.subject.isUnsubscribed
   }
 
-  asObservable() {
+  get observable() {
     return this.subject
   }
 
