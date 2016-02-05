@@ -2,7 +2,7 @@ import {BehaviorSubject} from 'rxjs/Rx'
 
 class Variable {
   constructor(value) {
-    this.subject = BehaviorSubject(value)
+    this.subject = new BehaviorSubject(value)
   }
 
   get value() {

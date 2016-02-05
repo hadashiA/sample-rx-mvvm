@@ -1,3 +1,3 @@
 import TodoList from './components/todo-list'
 
-new TodoList(document.body)
+const todoList = new TodoList({ el: document.body })
