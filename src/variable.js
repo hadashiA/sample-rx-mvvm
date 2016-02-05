@@ -6,7 +6,7 @@ class Variable {
   }
 
   get value() {
-    return this.subject.value()
+    return this.subject.value
   }
 
   set value(newValue) {
