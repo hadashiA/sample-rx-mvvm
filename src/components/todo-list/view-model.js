@@ -2,7 +2,7 @@ import {Observable} from 'rxjs/Rx'
 import ViewModel from '../../view-model'
 
 class TodoListViewModel extends ViewModel {
-  newTodo() {
+  create() {
     return title => {
       if (title.length > 0) {
         let value = this.todos.value
@@ -12,17 +12,40 @@ class TodoListViewModel extends ViewModel {
     }
   }
 
+  update() {
+    return ({title, completed, i}) => {
+      let todos = this.todos.value
+      if (title != null) {
+        todos[i].title = title
+      }
+      if (completed != null) {
+        todos[i].completed = completed
+      }
+      this.todos.value = todos
+    }
+  }
+
   editing(on) {
     return i => {
-      let todo = this.todos.value[i]
-      todo.editing = on
-      this.todos.value[i] = todo
+      let todos = this.todos.value
+      todos[i].editing = on
+      this.todos.value = todos
+    }
+  }
+
+  toggle() {
+    return i => {
+      let todos = this.todos.value
+      todos[i].completed = !todos[i].completed
+      this.todos.value = todos
     }
   }
 
   destroy() {
     return i => {
-      this.todos.value.splice(i, 1)
+      let todos = this.todos.value
+      todos.splice(i, 1)
+      this.todos.value = todos
     }
   }
 }

@@ -15,10 +15,6 @@ class TodoList extends Component {
       .map(e => e.target.value)
       .subscribe(this.vm.create())
 
-    this.event('edit', 'dbclick')
-      .map(e => e.target.closest('li').dataset.index)
-      .subscribe(this.vm.editing(true))
-
     this.event('edit', 'keypress')
       .filter(e => e.which === 13)
       .map(e => {
@@ -28,12 +24,20 @@ class TodoList extends Component {
       })
       .subscribe(this.vm.update())
 
+    this.event('todo', 'dbclick')
+      .map(e => e.target.closest('li').dataset.index)
+      .subscribe(this.vm.editing(true))
+
     this.event('edit', 'blur')
       .subscribe(this.vm.editing(false))
 
     this.event('edit', 'keydown')
       .filter(e => e.which === 27)
       .subscribe(this.vm.editing(false))
+
+    this.event('toggle', 'change')
+      .map(e => e.target.closest('li').dataset.index)
+      .subscribe(this.vm.toggle())
 
     this.event('destroy', 'click')
       .map(e => e.target.closest('li').dataset.index)
@@ -45,6 +49,7 @@ class TodoList extends Component {
   render() {
     return this.vm.todos.observable
       .map(todos => {
+        console.log(todos)
         const remining  = todos.filter(todo => !todo.completed).length
         const completed = todos.length > 0 && remining === 0
 
@@ -65,7 +70,7 @@ class TodoList extends Component {
                   h('input.edit', {value: todo.title }) :
                 h('div.view', [
                   h('input.toggle', { type: 'checkbox', checked: todo.completed }),
-                  h('label', todo.title),
+                  h('label.todo', todo.title),
                   h('button.destroy')
                 ])
               ])))

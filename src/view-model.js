@@ -7,15 +7,6 @@ class ViewModel {
       this[key] = new Variable(attrs[key])
     }
   }
-
-  observer(callbacks) {
-    return Object.assign({
-      isUnsubscribed: false,
-      next: function (value) { },
-      error: function (err) { throw err; },
-      complete: function () { }
-    }, callbacks)
-  }
 }
 
 export default ViewModel
