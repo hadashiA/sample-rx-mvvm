@@ -3,25 +3,50 @@ import h from 'virtual-dom/h'
 
 import Component from '../../component'
 import TodoListViewModel from './view-model'
-import TodoListItem from '../todo-list-item'
 
 class TodoList extends Component {
   constructor({el}) {
+    super({el})
+
     this.vm = new TodoListViewModel({ todos: [] })
     
-    const keypress = Observable.fromEvent(el, 'keypress')
+    this.event('new-todo', 'keypress')
+      .filter(e => e.which === 13)
+      .map(e => e.target.value)
+      .subscribe(this.vm.create())
 
-    this.bindTo(el)
+    this.event('edit', 'dbclick')
+      .map(e => e.target.closest('li').dataset.index)
+      .subscribe(this.vm.editing(true))
+
+    this.event('edit', 'keypress')
+      .filter(e => e.which === 13)
+      .map(e => {
+        const i = e.target.closest('li').dataset.index
+        const title = e.target.value
+        return {i, title}
+      })
+      .subscribe(this.vm.update())
+
+    this.event('edit', 'blur')
+      .subscribe(this.vm.editing(false))
+
+    this.event('edit', 'keydown')
+      .filter(e => e.which === 27)
+      .subscribe(this.vm.editing(false))
+
+    this.event('destroy', 'click')
+      .map(e => e.target.closest('li').dataset.index)
+      .subscribe(this.vm.destroy())
+    
+    this.bindDOM()
   }
 
   render() {
     return this.vm.todos.observable
       .map(todos => {
-        const items = todos.map(todo => new TodoListItem({ model: todo }))
-        // const reminings = items.filter(item => !item.completed.value)
-        // const completed = items.length > 0 && reminings.length === 0
-        const reminings = []
-        const completed = false
+        const remining  = todos.filter(todo => !todo.completed).length
+        const completed = todos.length > 0 && remining === 0
 
         return h('div', [
           h('section.todoapp', [
@@ -33,14 +58,24 @@ class TodoList extends Component {
             h('sestion.main', [
               h('input#toggle-all.toggle-all', { type: 'checkbox', checked: false }),
               h('label', { for: 'toggle-all' }),
-              h('ul.todo-list', items.map(item => item.vtree()))
+              h('ul.todo-list', todos.map((todo, i) => h('li', {
+                attributes: { 'data-index': i }
+              }, [
+                todo.editing ?
+                  h('input.edit', {value: todo.title }) :
+                h('div.view', [
+                  h('input.toggle', { type: 'checkbox', checked: todo.completed }),
+                  h('label', todo.title),
+                  h('button.destroy')
+                ])
+              ])))
             ]),
 
-            reminings.length > 0 ?
+            remining > 0 ?
               h('footer.footer', [
                 h('span.todo-count', [
-                  h('strong', reminings.length),
-                  reminings.length <= 1 ? 'Item' : 'Items'
+                  h('string', `${remining}`),
+                  remining <= 1 ? ' Item' : ' Items'
                 ]),
                 h('ul.filters', [
                   h('li', h('a.selected', { href: '#' }, 'All')),
