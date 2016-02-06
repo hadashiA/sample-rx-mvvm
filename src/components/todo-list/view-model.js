@@ -14,14 +14,15 @@ class TodoListViewModel extends ViewModel {
 
   update() {
     return ({title, completed, i}) => {
-      let todos = this.todos.value
+      let todo = this.todos.value[i]
       if (title != null) {
-        todos[i].title = title
+        todo.title = title
       }
       if (completed != null) {
-        todos[i].completed = completed
+        todo.completed = completed
       }
-      this.todos.value = todos
+      todo.editing = false
+      this.todos.value = this.todos.value
     }
   }
 

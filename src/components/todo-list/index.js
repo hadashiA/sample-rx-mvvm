@@ -24,7 +24,7 @@ class TodoList extends Component {
       })
       .subscribe(this.vm.update())
 
-    this.event('todo', 'dbclick')
+    this.event('todo', 'dblclick')
       .map(e => e.target.closest('li').dataset.index)
       .subscribe(this.vm.editing(true))
 
@@ -64,10 +64,10 @@ class TodoList extends Component {
               h('input#toggle-all.toggle-all', { type: 'checkbox', checked: false }),
               h('label', { for: 'toggle-all' }),
               h('ul.todo-list', todos.map((todo, i) => h('li', {
+                className: (todo.editing ? 'editing' : ''),
                 attributes: { 'data-index': i }
               }, [
-                todo.editing ?
-                  h('input.edit', {value: todo.title }) :
+                todo.editing ? h('input.edit', {value: todo.title }) :
                 h('div.view', [
                   h('input.toggle', { type: 'checkbox', checked: todo.completed }),
                   h('label.todo', todo.title),
