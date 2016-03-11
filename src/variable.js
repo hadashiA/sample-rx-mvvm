@@ -1,8 +1,11 @@
-import {BehaviorSubject} from 'rxjs/Rx'
+import { BehaviorSubject, Subscription } from 'rxjs/Rx'
 
 class Variable {
-  constructor(value) {
+  constructor(value, source) {
     this.subject = new BehaviorSubject(value)
+    if (source) {
+      this.sourceDisposable = source.subscribe(v => this.value = v)
+    }
   }
 
   get value() {
@@ -30,6 +33,11 @@ class Variable {
   }
 
   complete() {
+    this.subject.complete()
+  }
+
+  dispose() {
+    this.sourceDisposable.dispose()
     this.subject.complete()
   }
 }

@@ -1,12 +1,15 @@
 import {Observable} from 'rxjs/Observable'
+import {Subscription} from 'rxjs/Subscription'
 import h from 'virtual-dom/h'
 import diff from 'virtual-dom/diff'
 import patch from 'virtual-dom/patch'
 import createElement from 'virtual-dom/create-element'
 
 class Component {
-  constructor({el}) {
+  constructor(el) {
     this.el = el
+    this.children = []
+    this.subscription = new Subscription
   }
 
   bindDOM() {
@@ -25,15 +28,29 @@ class Component {
           this.el.appendChild(node)
         }
       })
+      .addTo(this.subscription)
   }
 
-  event(className, name) {
+  event(selector, name) {
     return Observable.fromEvent(this.el, name)
-      .filter(e => e.target.classList.contains(className))
+      .filter(e => e.target.closest(selector))
   }
 
   render() {
-    return Observable.just(h('div'))
+    return Observable.of(h('div'))
+  }
+
+  addChild(component) {
+    this.children.push(component)
+    this.subscription.add(component.subscription)
+  }
+
+  dispose() {
+    if (this.vm) {
+      this.vm.dispose()
+    }
+    this.subscription && this.subscription.unsubscribe()
+    this.subscription = null
   }
 }
 

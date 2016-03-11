@@ -1,58 +1,74 @@
-import {Observable, Subject} from 'rxjs/Rx'
+import {Observable} from 'rxjs/Rx'
 import h from 'virtual-dom/h'
 
 import Component from '../../component'
 import TodoListViewModel from './view-model'
 
 class TodoList extends Component {
-  constructor({el}) {
-    super({el})
+  constructor(el) {
+    super(el)
 
-    this.vm = new TodoListViewModel({ todos: [] })
+    this.vm = new TodoListViewModel
     
     this.event('new-todo', 'keypress')
       .filter(e => e.which === 13)
       .map(e => e.target.value)
-      .subscribe(this.vm.create())
+      .subscribe(this.vm.createCommand)
+      .addTo(this.subscription)
 
     this.event('edit', 'keypress')
       .filter(e => e.which === 13)
-      .map(e => {
-        const i = e.target.closest('li').dataset.index
-        const title = e.target.value
-        return {i, title}
-      })
-      .subscribe(this.vm.update())
+      .map(e => [
+        e.target.closest('li').dataset.index,
+        { title: e.target.value }
+      ])
+      .subscribe(this.vm.updateCommand)
+      .addTo(this.subscription)
 
     this.event('todo', 'dblclick')
-      .map(e => e.target.closest('li').dataset.index)
-      .subscribe(this.vm.editing(true))
+      .map(e => ([
+        e.target.closest('li').dataset.index,
+        { editing: true }
+      ]))
+      .subscribe(this.vm.updateCommand)
+      .addTo(this.subscription)
 
     this.event('edit', 'blur')
-      .subscribe(this.vm.editing(false))
+      .subscribe(this.vm.blurCommand)
+      .addTo(this.subscription)
 
     this.event('edit', 'keydown')
       .filter(e => e.which === 27)
-      .subscribe(this.vm.editing(false))
+      .map(e => ([
+        e.target.closest('li').dataset.index,
+        { editing: false }
+      ]))
+      .subscribe(this.vm.updateCommand)
+      .addTo(this.subscription)
 
     this.event('toggle', 'change')
-      .map(e => e.target.closest('li').dataset.index)
-      .subscribe(this.vm.toggle())
+      .map(e => ([
+        e.target.closest('li').dataset.index,
+        { completed: !e.target.checked }
+      ]))
+      .subscribe(this.vm.updateCommand)
+      .addTo(this.subscription)
 
     this.event('destroy', 'click')
       .map(e => e.target.closest('li').dataset.index)
-      .subscribe(this.vm.destroy())
+      .subscribe(this.vm.removeCommand)
+      .addTo(this.subscription)
     
     this.bindDOM()
   }
 
   render() {
-    return this.vm.todos.observable
-      .map(todos => {
-        console.log(todos)
-        const remining  = todos.filter(todo => !todo.completed).length
-        const completed = todos.length > 0 && remining === 0
-
+    return Observable.combineLatest(
+      this.vm.todos.observable,
+      this.vm.remining.observable,
+      this.vm.completed.observable,
+      (todos, remining, completed) => [todos, remining, completed])
+      .map(([todos, remining, completed]) => {
         return h('div', [
           h('section.todoapp', [
             h('header.header', [

@@ -1,53 +1,74 @@
-import {Observable} from 'rxjs/Rx'
+import { Observable, Subject, Subscription } from 'rxjs/Rx'
 import ViewModel from '../../view-model'
+import '../../rx-ext'
 
 class TodoListViewModel extends ViewModel {
-  create() {
-    return title => {
-      if (title.length > 0) {
-        let value = this.todos.value
-        value.push({ title: title })
-        this.todos.value = value
-      }
-    }
+  constructor(attrs) {
+    super(attrs)
+
+    this.subscription = new Subscription
+
+    this.createCommand = new Subject
+    this.updateCommand = new Subject
+    this.blurCommand   = new Subject
+    this.removeCommand = new Subject
+
+    this.createCommand
+      .subscribe(title => {
+        const todos = this.todos.value
+        todos.push({ title })
+        this.todos.value = todos
+      })
+      .addTo(this.subscription)
+
+    this.updateCommand
+      .subscribe(([i, attrs]) => {
+        const todos = this.todos.value
+        if (attrs.title != null) {
+          todos[i].title = attrs.title
+        }
+        if (attrs.editing != null) {
+          todos[i].editing = attrs.editing
+        }
+        if (attrs.completed != null) {
+          todos[i].completed = attrs.completed
+        }
+        this.todos.value = todos
+      })
+      .addTo(this.subscription)
+
+    this.blurCommand
+      .subscribe(() => {
+        const todos = this.todos.value
+        for (let todo of todos) {
+          todo.editing = false
+        }
+        this.todos.value = todos
+      })
+      .addTo(this.subscription)
+
+    this.removeCommand
+      .subscribe(i => {
+        const todos = this.todos.value
+        todos.splice(i, 1)
+        this.todos.value = todos
+      })
+      .addTo(this.subscription)
+
+    this.remining = this.todos.observable
+      .map(todos => todos.filter(todo => !todo.completed).length)
+      .toVariable()
+
+    this.completed = Observable.combineLatest(
+      this.todos.observable,
+      this.remining.observable,
+      (todos, remining) => (todos.length > 0 && remining === 0))
+      .toVariable()
   }
 
-  update() {
-    return ({title, completed, i}) => {
-      let todo = this.todos.value[i]
-      if (title != null) {
-        todo.title = title
-      }
-      if (completed != null) {
-        todo.completed = completed
-      }
-      todo.editing = false
-      this.todos.value = this.todos.value
-    }
-  }
-
-  editing(on) {
-    return i => {
-      let todos = this.todos.value
-      todos[i].editing = on
-      this.todos.value = todos
-    }
-  }
-
-  toggle() {
-    return i => {
-      let todos = this.todos.value
-      todos[i].completed = !todos[i].completed
-      this.todos.value = todos
-    }
-  }
-
-  destroy() {
-    return i => {
-      let todos = this.todos.value
-      todos.splice(i, 1)
-      this.todos.value = todos
-    }
+  dispose() {
+    this.subscription.dispose()
+    super.dispose()
   }
 }
 
