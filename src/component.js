@@ -1,12 +1,16 @@
-import {Observable} from 'rxjs/Observable'
+import { Observable } from 'rxjs/Observable'
 import h from 'virtual-dom/h'
 import diff from 'virtual-dom/diff'
 import patch from 'virtual-dom/patch'
 import createElement from 'virtual-dom/create-element'
 
+import 'rxjs/add/observable/fromEvent'
+import 'rxjs/add/operator/share'
+
 class Component {
-  constructor({el}) {
+  constructor(el) {
     this.el = el
+    this.events = {}
   }
 
   bindDOM() {
@@ -27,9 +31,16 @@ class Component {
       })
   }
 
-  event(className, name) {
-    return Observable.fromEvent(this.el, name)
-      .filter(e => e.target.classList.contains(className))
+  on(eventName, selector) {
+    if (!this.events[eventName]) {
+      this.events[eventName] = Observable.fromEvent(this.el, eventName).share()
+    }
+
+    if (selector) {
+      return this.events[eventName].filter(e => e.target.closest(selector))
+    } else {
+      return this.events[eventName]
+    }
   }
 
   render() {

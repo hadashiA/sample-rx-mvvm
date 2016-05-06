@@ -1,8 +1,11 @@
-import {BehaviorSubject} from 'rxjs/Rx'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 
 class Variable {
-  constructor(value) {
+  constructor(value, source) {
     this.subject = new BehaviorSubject(value)
+    if (source) {
+      this.sourceDisposable = source.subscribe(v => this.value = v)
+    }
   }
 
   get value() {
@@ -32,6 +35,12 @@ class Variable {
   complete() {
     this.subject.complete()
   }
+
+  unsubscribe() {
+    this.sourceDisposable.unsubscribe()
+    this.subject.complete()
+  }
 }
 
 export default Variable
+

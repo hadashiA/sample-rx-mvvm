@@ -1,28 +1,41 @@
-import {Observable} from 'rxjs/Rx'
+import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
 import ViewModel from '../../view-model'
 
+import 'rxjs/add/observable/combineLatest'
+
 class TodoListViewModel extends ViewModel {
+  constructor({ todos = [] }) {
+    super({ todos })
+
+    this.remining = this.todos.observable
+      .map(todos => {
+        return todos.filter(todo => !todo.completed).length
+      })
+      .toVariable(0)
+
+    this.completed = Observable.combineLatest(
+      this.todos.observable,
+      this.remining.observable,
+      (todos, remining) => {
+        return todos.length > 0 && remining === 0
+      })
+      .toVariable(false)
+  }
+
   create() {
     return title => {
-      if (title.length > 0) {
-        let value = this.todos.value
-        value.push({ title: title })
-        this.todos.value = value
-      }
+      let todos = this.todos.value
+      todos.push({ title })
+      this.todos.value = todos
     }
   }
 
   update() {
-    return ({title, completed, i}) => {
-      let todo = this.todos.value[i]
-      if (title != null) {
-        todo.title = title
-      }
-      if (completed != null) {
-        todo.completed = completed
-      }
-      todo.editing = false
-      this.todos.value = this.todos.value
+    return (i, title) => {
+      let todos = this.todos.value
+      todos[i].title = title
+      this.todos.value = todos
     }
   }
 
@@ -33,7 +46,7 @@ class TodoListViewModel extends ViewModel {
       this.todos.value = todos
     }
   }
-
+  
   toggle() {
     return i => {
       let todos = this.todos.value
@@ -42,7 +55,7 @@ class TodoListViewModel extends ViewModel {
     }
   }
 
-  destroy() {
+  remove() {
     return i => {
       let todos = this.todos.value
       todos.splice(i, 1)
